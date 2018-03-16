@@ -61,6 +61,7 @@ uint16_t Crc_CalculateCRC16( const uint8_t* dataPtr, uint32_t len, uint16_t star
 
 #else
 
+#ifdef CRC8_WITH_TABLE
 static const uint8_t crc_table[] = {
     0x00,0x31,0x62,0x53,0xc4,0xf5,0xa6,0x97,0xb9,0x88,0xdb,0xea,0x7d,0x4c,0x1f,0x2e,
     0x43,0x72,0x21,0x10,0x87,0xb6,0xe5,0xd4,0xfa,0xcb,0x98,0xa9,0x3e,0x0f,0x5c,0x6d,
@@ -88,11 +89,45 @@ uint8_t cal_crc_table(uint8_t *ptr, uint32_t len, uint8_t startVal)  {
 
     return (crc);
 }
+#else 
+uint8_t cal_crc_table(uint8_t *ptr, uint32_t len, uint8_t startVal) {
+	uint8_t crc = startVal;
+	uint32_t i;
+	
+	while ( len-- ) {
+        crc ^= *ptr++;
+        for ( i = 8; i > 0; --i ) {
+            if ( crc & 0x80 )
+                crc = (crc << 1) ^ 0x31;
+            else
+                crc = (crc << 1);
+        }
+    }
 
+    return (crc); 
+}
+#endif	/* CRC8_WITH_TABLE */
 
 #endif
 
+static uint32_t crc32_le_generic(uint32_t crc, unsigned char const *p, uint32_t len, uint32_t polynomial) {
+    int i;
+    while ( len-- ) {
+        crc ^= *p++;
+        for (i = 0; i < 8; i++)
+            crc = (crc >> 1) ^ ((crc & 1) ? polynomial : 0);
+    }
+	
+    return crc;
+}
 
+uint32_t crc32_le(uint32_t crc, unsigned char const *p, uint32_t len) {
+    return crc32_le_generic(crc, p, len, CRCPOLY_LE);
+}
+
+uint32_t crc32c_le(uint32_t crc, unsigned char const *p, uint32_t len) {
+    return crc32_le_generic(crc, p, len, CRC32C_POLY_LE);
+}
 
 #ifdef __cplusplus
 }

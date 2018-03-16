@@ -1,0 +1,10 @@
+OpenWindow="Memory Content 1", DockArea=BOTTOM, x=0, y=0, w=1026, h=326, FilterBarShown=0, 
+OpenWindow="Registers", DockArea=RIGHT, x=0, y=1, w=381, h=386, FilterBarShown=0, 
+OpenWindow="Console", DockArea=BOTTOM, x=1, y=0, w=893, h=326, FilterBarShown=0, 
+OpenWindow="Functions", DockArea=LEFT, x=0, y=1, w=300, h=344, FilterBarShown=1, 
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=381, h=252, FilterBarShown=0, ExecCountersShown=0
+OpenWindow="Breakpoints", DockArea=LEFT, x=0, y=0, w=300, h=294, FilterBarShown=0, 
+OpenToolbar="Debug", Floating=0, x=0, y=0
+TableHeader="Registers", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[110;77;217]
+TableHeader="Functions", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Address";"Size";"#Insts";"Source"], ColWidths=[49;67;49;61;414]
+TableHeader="Breakpoints", SortCol="State", SortOrder="ASCENDING", VisibleCols=["State";"Location";"Permitted Impl.";"Actual Impl.";"Context";"Task Filter";"Skip #";"Condition";"Script Callback"], ColWidths=[55;73;115;97;67;91;61;79;115]

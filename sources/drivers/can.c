@@ -50,6 +50,7 @@ void CAN_Init(uint_8 mode,uint_8 open_filter,uint_32 acc_id)
         p->CANIDAR_BANK_1[1]=acc_id<<5;
         p->CANIDAR_BANK_1[2]=0xFF;
         p->CANIDAR_BANK_1[3]=0xFF;
+
         // ÉèÖÃÆÁ±Î¼Ä´æÆ÷µÄÖµ
         p->CANIDMR_BANK_1[0]=0x00;
         p->CANIDMR_BANK_1[1]=0x1F;
@@ -62,6 +63,7 @@ void CAN_Init(uint_8 mode,uint_8 open_filter,uint_32 acc_id)
         p->CANIDAR_BANK_2[1]=acc_id<<5;
         p->CANIDAR_BANK_2[2]=0xFF;
         p->CANIDAR_BANK_2[3]=0xFF;
+
         // ÉèÖÃÆÁ±Î¼Ä´æÆ÷µÄÖµ
         p->CANIDMR_BANK_2[0]=0x00;
         p->CANIDMR_BANK_2[1]=0x1F;

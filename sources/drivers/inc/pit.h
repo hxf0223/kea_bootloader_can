@@ -24,5 +24,6 @@ void init_pit(void);
 void Reset_pit(void);
 void disable_pit(void);
 uint8_t is_pit_triggered(void);
+uint32_t pit_get_current_counter();
 
 #endif /* SOURCES_DRIVERS_INC_PIT_H_ */

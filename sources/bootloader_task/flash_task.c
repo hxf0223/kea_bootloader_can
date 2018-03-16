@@ -1,45 +1,18 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include "typedef.h"
 #include "crc.h"
 #include "memcpy2.h"
 #include "ring_buffer.h"
 #include "can_interface.h"
+#include "StbM.h"
 #include "flash.h"
+#include "bootloader_command_def.h"
 #include "flash_task.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-#define FP_COMMAND_START				0x31U
-#define FP_QUERY_CAPACITY				0x32U
-#define FP_COMMAND_FRAME_START			0x33U
-#define FP_COMMAND_FRAME_FINISH			0x34U
-#define FP_COMMAND_VERIFY				0x35U
-#define FP_COMMAND_BOOT					0x36U
-
-#define FP_COMMAND_INVALID				0xffU
-#define FP_RESPONSE_INVALID				0xffU
-
-#define FP_RESPONSE_ADD_VALUE			0x20U
-#define FP_ERROR_RESPONSE				0xf7U
-
-//#define FP_RESPONSE_ERR_CODE_OK					0x55U
-#define FP_RESPONSE_ERR_CODE_STATE					0x01U	// state transfer invalid
-#define FP_RESPONSE_ERR_CODE_CRC					0x02U	// payload crc fail
-#define FP_RESPONSE_ERR_CODE_DATA_CRC				0x03U	// data crc fail when frame finish
-#define FP_RESPONSE_ERR_CODE_TIMEOUT				0x04U
-#define FP_RESPONSE_ERR_CODE_DATA_OVERFLOW			0x05U	// data receive overflow
-#define FP_RESPONSE_ERR_CODE_DATA_LEN				0x06U	// data length not match when frame finish(deprecated)
-#define FP_RESPONSE_ERR_CODE_FSF_SYNC				0x07U	// frame start / frame finish command not sync
-#define FP_RESPONSE_ERR_CODE_CAP_LIMIT				0x08U	// capacity limit when frame start
-#define FP_RESPONSE_ERR_CODE_ADDR_INVALID			0x09U	// command's address invalid
-#define FP_RESPONSE_ERR_CODE_START_ADDR_NOT_MATCH	0x0AU	// TODO: TBD
-#define FP_RESPONSE_ERR_CODE_ERASE_FAIL				0x0BU
-#define FP_RESPONSE_ERR_CODE_FLASH_FAIL				0x0CU
-#define FP_RESPONSE_ERR_VERIFY_CRC_NOT_MATCH		0x0DU
-#define FP_RESPONSE_ERR_CODE_UNKNOWN				0x30U
 
 
 typedef enum {
@@ -397,9 +370,10 @@ static uint8_t command_process_boot(uint8_t* pData, uint16_t len, void* param) {
 
 
 
-static ring_buffer_t g_rb;
 static flash_progress_t g_fp;
 static fp_state_e g_fp_state;
+static uint16_t g_tm_wait_start, g_tm_ellapsed;
+static flash_task_init_data_t g_init_data = { NULL, NULL };
 
 static const command_process_t g_command_process_list[] = {	// data driven
 	{fp_state_wait_start, 			/*FP_COMMAND_START,*/ 		6, command_process_start, 			&g_fp, common_error_response},
@@ -421,16 +395,25 @@ static command_process_t* find_command_process(fp_state_e stt) {
 	return NULL;
 }
 
+/* start flash task */
+void flash_task_init(void* p) {
+	flash_task_init_data_t* pinit = (flash_task_init_data_t*)p;
+	g_init_data = *pinit;
 
-void flash_task_init(void) {
-	ring_buffer_init(&g_rb);
+	flash_task_start();
+}
+
+void flash_task_start() {
 	flash_progress_reset(&g_fp);
 	g_fp.next_fp_state = fp_state_wait_start;
 	g_fp_state = fp_state_wait_start;
+
+	g_tm_wait_start = StbM_GetNowTick();
+	g_tm_ellapsed = 0;
 }
 
 uint16_t flash_task_push(const void* buff, uint16_t sizeInBytes) {
-	return ring_buff_push(&g_rb, buff, sizeInBytes);
+	return ring_buff_push(g_init_data.rb_rx, buff, sizeInBytes);
 }
 
 static void flash_progress_reset_all() {
@@ -439,34 +422,38 @@ static void flash_progress_reset_all() {
 	g_fp_state = fp_state_wait_start;
 }
 
-uint8_t flash_task_run() {
+uint32_t flash_task_run() {
 	uint8_t cmd_err, buff[CAN_FRAME_LEN];
-	uint16_t receive_num = ring_buffer_pop(&g_rb, buff, CAN_FRAME_LEN);
+	uint16_t receive_num = ring_buffer_pop(g_init_data.rb_rx, buff, CAN_FRAME_LEN);
 	command_process_t* cmd_process = find_command_process(g_fp_state);
 
 	if ( receive_num == 0 ) {
+		g_tm_ellapsed = StbM_Elapsed(g_tm_wait_start);
+		uint32_t return_err = (g_tm_ellapsed << 16);
+		
 		if ( g_fp_state == fp_state_wait_start ) {
 			cmd_process->func(buff, receive_num, &g_fp);
-			return FLASH_TASK_RUN_ERR_START_WAIT_TIMEOUT;
+			if ( g_tm_ellapsed > FLASH_TASK_TIMEOUT_WAIT_START )
+				return_err |= FLASH_TASK_RUN_ERR_START_WAIT_TIMEOUT;		
+		} else {
+			if ( g_tm_ellapsed > FLASH_TASK_TIMEOUT_RUN )
+				return_err |= FLASH_TASK_TIMEOUT_RUN;
 		}
-		return FLASH_TASK_RUN_ERR_TIMEOUT;
+		
+		return return_err;
 	}
+
+	g_tm_wait_start = StbM_GetNowTick();
 
 	if ( NULL != cmd_process ) {
 		if ( cmd_process->err_check_func ) {
 			uint16_t cmd_len = cmd_process->command_len;
 			cmd_err = cmd_process->err_check_func(buff[0], buff, cmd_len);
-			if ( !cmd_err ) {
-				flash_progress_reset_all();
-				return FLASH_TASK_RUN_ERR_FAIL;
-			}
+			if ( !cmd_err ) goto fail_process;
 		}
 
 		cmd_err = cmd_process->func(buff, receive_num, &g_fp);
-		if ( !cmd_err ) {
-			flash_progress_reset_all();
-			return FLASH_TASK_RUN_ERR_FAIL;
-		}
+		if ( !cmd_err ) goto fail_process;
 
 		if ( fp_state_command_boot == g_fp_state ) {
 			flash_progress_reset_all();
@@ -477,11 +464,10 @@ uint8_t flash_task_run() {
 		return FLASH_TASK_RUN_ERR_OK;
 	}
 
+fail_process:
+	flash_progress_reset_all();
 	return FLASH_TASK_RUN_ERR_FAIL;
 }
-
-
-
 
 
 

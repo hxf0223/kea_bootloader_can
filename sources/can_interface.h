@@ -7,9 +7,17 @@
 #define CAN_FRAME_LEN			8U
 #define CAN_FILL_BYTE			0xAAU
 
-#define BOOTLOADER_RX_CAN_ID	((uint32_t)0x102)
+#define BOOTLOADER_RX_CAN_ID	((uint32_t)0x102)   /* default can rx id */
 #define BOOTLOADER_TX_CAN_ID	((uint32_t)0x112)
+#define BOOTLOADER_RX_BROADCAST_CAN_ID	((uint32_t)0x7DC)
 
+typedef uint8_t (*is_valid_rx_can_id_cb_t)(uint32_t);
+
+typedef struct {
+    uint32_t nonvc_can_tx_id;
+} can_interface_init_t;
+
+uint8_t can_interface_init(const void* p);
 
 uint8_t can_transmit(CANMsg* pMsg);
 uint8_t can_receive(CANMsg* pMsg);

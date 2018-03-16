@@ -2,7 +2,7 @@
   FileVersion = 2
 [GENERAL]
   ConnectMode = 0
-  CurrentFile = "E:\kongque\BMU112_C.srec"
+  CurrentFile = "E:\workspace\BMSInOne\KEA_Bootloader_can\Debug\KEA_Bootloader_origin.srec"
   DataFileSAddr = 0x00000000
   GUIMode = 0
   HostName = ""

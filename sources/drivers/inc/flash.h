@@ -107,22 +107,22 @@ extern "C" {
 *******************************************************************************/
 #define FTMRH_CMD_ERASE_VERIFY_ALL				0x01			/*!< FTMRH erase verify all command */
 #define FTMRH_CMD_ERASE_VERIFY_BLOCK			0x02			/*!< FTMRH erase verify block command */
-#define FTMRH_CMD_ERASE_ALL								0x08			/*!< FTMRH erase all command */
-#define FTMRH_CMD_ERASE_BLOCK							0x09			/*!< FTMRH erase blockcommand */
-#define FTMRH_CMD_UNSECURE								0x0B			/*!< FTMRH unsecure command */
-#define FTMRH_CMD_SET_USER_MARGIN					0x0D			/*!< FTMRH set usermargin command */
+#define FTMRH_CMD_ERASE_ALL						0x08			/*!< FTMRH erase all command */
+#define FTMRH_CMD_ERASE_BLOCK					0x09			/*!< FTMRH erase blockcommand */
+#define FTMRH_CMD_UNSECURE						0x0B			/*!< FTMRH unsecure command */
+#define FTMRH_CMD_SET_USER_MARGIN				0x0D			/*!< FTMRH set usermargin command */
 
-#define FLASH_CMD_ERASE_VERIFY_SECTION		0x03			/*!< FTMRH erase verify section command */
-#define FLASH_CMD_READONCE								0x04			/*!< FTMRH read once command */
-#define FLASH_CMD_PROGRAM									0x06			/*!< FTMRH program command */
-#define FLASH_CMD_PROGRAMONCE							0x07			/*!< FTMRH program once command */
-#define FLASH_CMD_ERASE_SECTOR						0x0A			/*!< FTMRH erase sector command */
-#define FLASH_CMD_BACKDOOR_ACCESS					0x0C			/*!< FTMRH backdoor key access command */
-#define FLASH_CMD_SET_USER_MARGIN_LEVEL		0x0D			/*!< FTMRH set user margin level command */
+#define FLASH_CMD_ERASE_VERIFY_SECTION			0x03			/*!< FTMRH erase verify section command */
+#define FLASH_CMD_READONCE						0x04			/*!< FTMRH read once command */
+#define FLASH_CMD_PROGRAM						0x06			/*!< FTMRH program command */
+#define FLASH_CMD_PROGRAMONCE					0x07			/*!< FTMRH program once command */
+#define FLASH_CMD_ERASE_SECTOR					0x0A			/*!< FTMRH erase sector command */
+#define FLASH_CMD_BACKDOOR_ACCESS				0x0C			/*!< FTMRH backdoor key access command */
+#define FLASH_CMD_SET_USER_MARGIN_LEVEL			0x0D			/*!< FTMRH set user margin level command */
 
-#define EEPROM_CMD_ERASE_VERIFY_SECTION		0x10			/*!< EEPROM erase berify section command */
-#define EEPROM_CMD_PROGRAM								0x11			/*!< EEPROM program command */
-#define EEPROM_CMD_ERASE_SECTOR 					0x12			/*!< EEPROM erase sector command */
+#define EEPROM_CMD_ERASE_VERIFY_SECTION			0x10			/*!< EEPROM erase berify section command */
+#define EEPROM_CMD_PROGRAM						0x11			/*!< EEPROM program command */
+#define EEPROM_CMD_ERASE_SECTOR 				0x12			/*!< EEPROM erase sector command */
 /*! @} End of flash_command_list                                              */
 
 

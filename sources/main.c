@@ -32,79 +32,78 @@
 #include "clock.h"
 #include "StbM.h"
 #include "flash.h"
+#include "non_volatile_config.h"
 #include "low_level_init.h"
 #include "can_interface.h"
+#include "bootloader_task.h"
 #include "flash_task.h"
 
 
-#define WAIT_START_TIMEOUT_VALUE	((uint16_t)300)
-#define COMM_TIMEOUT_VALUE			((uint16_t)200)
+static void JumpToUserApplication(uint32_t userSP,  uint32_t userStartup);
 
-
-void JumpToUserApplication(uint32_t userSP,  uint32_t userStartup);
-
-
-/* Main Application*/
 int main(void)
 {
 	CANMsg can_msg;
 	volatile uint32_t* app_entry_address = (uint32_t*)APP_ENTRY_ADDRESS;
-	uint16_t tm_wait_start, tm_comm_timeout, ellapsed;
-	uint8_t flash_task_err, rec_num;
+	uint16_t flash_task_err, rec_num;
 	uint8_t ft_ok_response_delay;	// indicate if need flash task boot response delay
-
+	non_volatile_config_t nv_config;
+	bootloader_task_init_data_t bl_task_init_data;
+	bl_task_init_data.nv_config_ram = &nv_config;
+	
 	/*init_comm();
 	O_D_485_DE_RE_OUT;*/
 
 	low_level_init();
 	StbM_Init();
-	//CAN_Fill_STD_Msg(&can_msg,0x101,buff,8);
-	//uint8_t err = FLASH_EraseSector(0x4000);
+
+	uint8_t nonvc_err = nonvc_get_config(&nv_config);
+	if ( !nonvc_err ) {
+		can_interface_init_t ci_init_data;
+		ci_init_data.nonvc_can_tx_id = nv_config.config.can_id;
+		can_interface_init(&ci_init_data);
+	}
+
+	bootloader_task_init(&bl_task_init_data);
 
 boot_flash_pos:
-	flash_task_init();
-	tm_wait_start = StbM_GetNowTick();
-	tm_comm_timeout = tm_wait_start;
+	//flash_task_init();
 	ft_ok_response_delay = 0;
 
     do {
     	StbM_MainFunction();
     	rec_num = can_receive(&can_msg);
-    	if ( rec_num > 8 ) {
-    		rec_num = 0;
-    	}
-
+		#if 0
     	if ( rec_num > 0 ) {
-    		char sig = 1;
-    		sig = rec_num;
+    		non_volatile_config_t temp;
+			nonvc_get_config(&temp);
+			temp.config.can_id = 0x120;
+			temp.config.reboot_cmd = 0xff;
+			uint8_t nonvc_err = nonvc_set_config(&temp);
+			can_msg.m_data[0] = can_msg.m_data[0] + 0x20;
+			can_msg.m_data[1] = nonvc_err;
+			uint16_t config_size = sizeof(non_volatile_config_t);
+			memset2(&can_msg.m_data, 0xff, 8);
+			memcpy2(&(can_msg.m_data[2]), &config_size, 2);
+			can_msg.m_dataLen = 8;
+			can_transmit(&can_msg);
+			continue;
     	}
+		#endif
 
     	if ( rec_num > 0 && can_msg.m_ID == BOOTLOADER_RX_CAN_ID )
     		flash_task_push(can_msg.m_data, can_msg.m_dataLen);
-    	flash_task_err = flash_task_run();
+    	flash_task_err = (uint16_t)flash_task_run();
 
-    	if ( FLASH_TASK_RUN_ERR_FLASH_FINISH == flash_task_err ) {
-    		ft_ok_response_delay = 1;
+    	if ( (flash_task_err & 0xf0) != 0 ) {
+			if ( FLASH_TASK_RUN_ERR_FLASH_FINISH == flash_task_err )
+    			ft_ok_response_delay = 1;
     		goto end_of_loop;
-    	} else if ( FLASH_TASK_RUN_ERR_START_WAIT_TIMEOUT == flash_task_err ) {
-			ellapsed = StbM_Elapsed(tm_wait_start);
-			if ( ellapsed > WAIT_START_TIMEOUT_VALUE ) {
-				goto end_of_loop;
-			}
-		} else if ( FLASH_TASK_RUN_ERR_TIMEOUT == flash_task_err ) {
-			ellapsed = StbM_Elapsed(tm_comm_timeout);
-			if ( ellapsed > COMM_TIMEOUT_VALUE ) {
-				FLASH_EraseSector(APP_ENTRY_ADDRESS);
-				goto end_of_loop;
-			}
-		} else if ( flash_task_err & 0x0f ) {
+    	} else if ( flash_task_err & 0x0f ) {
 			FLASH_EraseSector(APP_ENTRY_ADDRESS);
 			goto end_of_loop;
-		} else {
-    		tm_wait_start = StbM_GetNowTick();
-    		tm_comm_timeout = tm_wait_start;
-    	}
-
+		}
+		
     } while( 1 );
 
 end_of_loop:
@@ -179,3 +178,4 @@ void JumpToUserApplication( uint32_t userSP,  uint32_t userStartup )
 	//__asm("mov pc, r1");
 	jump2app();
 }
+

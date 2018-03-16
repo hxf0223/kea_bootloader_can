@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "GPIOA_Init.h"
 #include "SKEAZ1284.h"
 #include "Init_Config.h"
@@ -68,12 +69,22 @@ typedef struct {
 } can_entry_func_t;
 
 static uint8_t g_active_can_entry_id = 0xff;
-static const can_entry_func_t g_can_entry[CAN_ENTRY_NUM] = {
+static can_entry_func_t g_can_entry[CAN_ENTRY_NUM] = {
 		{BOOTLOADER_RX_CAN_ID, BOOTLOADER_TX_CAN_ID, scan_receive, scan_transmit},
 		{BOOTLOADER_RX_CAN_ID, BOOTLOADER_TX_CAN_ID, acan_receive, acan_transmit},
 		{BOOTLOADER_RX_CAN_ID, BOOTLOADER_TX_CAN_ID, dcan_receive, dcan_transmit}
 };
 
+uint8_t can_interface_init(const void* p) {
+	if ( NULL != p ) {
+		can_interface_init_t* pinit = (can_interface_init_t*)p;
+		for ( uint8_t i = 0; i < CAN_ENTRY_NUM; i++ ) {
+			g_can_entry[i].txid = pinit->nonvc_can_tx_id;
+		}
+	}
+
+	return 0;
+}
 
 uint8_t can_transmit( CANMsg* pMsg ) {
 	if ( g_active_can_entry_id < CAN_ENTRY_NUM ) {
@@ -88,8 +99,10 @@ uint8_t can_receive( CANMsg* pMsg ) {
 	if ( g_active_can_entry_id >= CAN_ENTRY_NUM ) {
 		for ( uint8_t i = 0; i < CAN_ENTRY_NUM; i++ ) {
 			uint8_t rec_num = g_can_entry[i].receive_func(pMsg);
-			if ( rec_num > 0 && pMsg->m_ID == BOOTLOADER_RX_CAN_ID ) {
-				g_active_can_entry_id = i;
+			if ( rec_num > 0 ) {
+				if ( pMsg->m_ID == BOOTLOADER_RX_CAN_ID || 
+					pMsg->m_ID == BOOTLOADER_RX_BROADCAST_CAN_ID )
+					g_active_can_entry_id = i;
 				return rec_num;
 			}
 		}
@@ -103,8 +116,7 @@ uint8_t can_receive( CANMsg* pMsg ) {
 
 
 void init_can_frame(CANMsg* pMsg) {
-	pMsg->m_IDE = 0;
-	pMsg->m_RTR = 0;
+	pMsg->m_IDE = pMsg->m_RTR = 0;
 	pMsg->m_dataLen = CAN_FRAME_LEN;
 	for ( uint8_t i = 0; i < CAN_FRAME_LEN; i++ ) {
 		pMsg->m_data[i] = CAN_FILL_BYTE;

@@ -25,8 +25,7 @@ void UART_pin_settings_reset(void){
 	SIM_PINSEL1 &= 0xFFFFFFFF & (~(SIM_PINSEL1_UART1PS_MASK | SIM_PINSEL1_UART2PS_MASK ));
 }
 
-void SPI_pin_settings(enum SPI_pinsel spi_pins){
-
+void SPI_pin_settings(enum SPI_pinsel spi_pins) {
 	if((spi_pins == 0) | (spi_pins == 1)){
 		SIM_PINSEL0 |= (spi_pins << SIM_PINSEL_SPI0PS_SHIFT);
 	} else if ((spi_pins == 2) | (spi_pins == 3)){
@@ -34,7 +33,7 @@ void SPI_pin_settings(enum SPI_pinsel spi_pins){
 	}
 }
 
-void SPI_pin_settings_reset(void){
+void SPI_pin_settings_reset(void) {
 	/* Set to reset state */
 	SIM_PINSEL0 &= 0xFFFFFFFF & (~SIM_PINSEL_SPI0PS_MASK);
 	SIM_PINSEL1 &= 0xFFFFFFFF & (~SIM_PINSEL1_SPI1PS_MASK);

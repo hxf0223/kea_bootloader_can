@@ -63,4 +63,4 @@ typedef volatile int_32 vint_32;  // 不优化有符号32位数
 
 
 
-#endif /* SOURCES_DRIVERS_INC_COMMON_H_ */
+#endif

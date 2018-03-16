@@ -120,8 +120,6 @@ void GPIOA_Init(void) {
   #elif defined(GPIOA_PIDR_VALUE)
   GPIOA_PIDR = GPIOA_PIDR_VALUE;
   #endif
-
-
 }
 
 #ifdef __cplusplus
