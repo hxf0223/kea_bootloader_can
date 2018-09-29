@@ -1,0 +1,18 @@
+{
+  "configurations": [
+    {
+      "inheritEnvironments": [
+        "gcc-arm"
+      ],
+      "name": "gccarm",
+      "includePath": [
+        "${workspaceRoot}\\**",
+        "D:\\Freescale\\KDS_v3\\Toolchain\\arm-none-eabi\\include"
+      ],
+      "defines": [
+        "_DEBUG"
+      ],
+      "intelliSenseMode": "linux-gcc-arm"
+    }
+  ]
+}
