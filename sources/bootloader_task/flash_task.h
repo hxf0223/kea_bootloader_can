@@ -1,4 +1,5 @@
 #include "low_level_init.h"
+#include "ring_buffer.h"
 
 #ifndef _FLASH_TASK_H
 #define _FLASH_TASK_H
