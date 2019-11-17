@@ -1,8 +1,7 @@
-#include <stdint.h>
-
 #ifndef _RING_BUFFER_H
 #define _RING_BUFFER_H
 
+#include <stdint.h>
 
 #define RING_BUFFER_SIZE		256U
 typedef struct {

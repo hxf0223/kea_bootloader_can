@@ -19,10 +19,9 @@
 //        acc_id:接受ID，接收过滤器只接收标识符符合此ID的帧，过滤其他ID的帧
 //函数返回：无
 //===========================================================================
-void CAN_Init(uint_8 mode,uint_8 open_filter,uint_32 acc_id)
+void mscan_init(uint_8 mode,uint_8 open_filter,uint_32 acc_id, can_baud_rate_e baudRate)
 {
-    uint_8 i;
-    MSCAN_MemMapPtr p = (MSCAN_MemMapPtr) MSCAN_BASE_PTR;
+	MSCAN_MemMapPtr p = (MSCAN_MemMapPtr) MSCAN_BASE_PTR;
 
     //MSCAN的引脚复用选择CAN_TX为PTC7，CAN_RX为PTC6
     SIM_PINSEL1 &= (uint_32)~(uint_32)(SIM_PINSEL1_MSCANPS_MASK);
@@ -72,9 +71,8 @@ void CAN_Init(uint_8 mode,uint_8 open_filter,uint_32 acc_id)
     }
     else//关闭过滤器
     {
-        for (i = 0; i < 16; i++)
+        for (uint_8 i = 0; i < 16; i++)
         {
-
             if(i>=0 && i <=3)
                 p->CANIDAR_BANK_1[i] = 0xFF;
             else if(i>=4 && i <=7)
@@ -90,11 +88,26 @@ void CAN_Init(uint_8 mode,uint_8 open_filter,uint_32 acc_id)
     p->CANCTL1 |= MSCAN_CANCTL1_CLKSRC_MASK;    // 采用总线时钟(24MHz)作为模块时钟
     p->CANBTR0 |= MSCAN_CANBTR0_SJW(0);
     p->CANBTR1 |= MSCAN_CANBTR1_SAMP_MASK;     // 位时间采样次数为3
-    // MSCAN传输波特率 = 模块时钟 / [(1 + TSEG1 + TSEG2) * 分频因子]
-    //                = 20000K/[(1+13+6)*2]=500Kbps
-    p->CANBTR0 |= MSCAN_CANBTR0_BRP(1);        // 模块时钟2分频
-    p->CANBTR1 |= MSCAN_CANBTR1_TSEG2(5);      // TSEG2:5+1=6 Tq
-    p->CANBTR1 |= MSCAN_CANBTR1_TSEG1(12);     // TSEG1:12+1=13 Tq
+
+	switch (baudRate) {
+	case can_baud_rate_500k: // baudrate = 模块时钟 / [(1 + TSEG1 + TSEG2) * 分频因子] = 20000K/[(1+13+6)*2]=500Kbps
+		p->CANBTR0 |= MSCAN_CANBTR0_BRP(1);		// 模块时钟2分频
+		p->CANBTR1 |= MSCAN_CANBTR1_TSEG2(5);	// TSEG2:5+1=6 Tq
+		p->CANBTR1 |= MSCAN_CANBTR1_TSEG1(12);	// TSEG1:12+1=13 Tq
+		break;
+
+	case can_baud_rate_125k:
+		p->CANBTR0 |= MSCAN_CANBTR0_BRP(0x1A);	// 模块时钟27分频
+		p->CANBTR1 |= MSCAN_CANBTR1_TSEG2(0x01);// TSEG2:1+1=6 Tq
+		p->CANBTR1 |= MSCAN_CANBTR1_TSEG1(0x03);// TSEG1:3+1=13 Tq
+		break;
+
+	default:	// default to 250k
+		p->CANBTR0 |= MSCAN_CANBTR0_BRP(0x0D);	// 模块时钟14分频
+		p->CANBTR1 |= MSCAN_CANBTR1_TSEG2(0x01);// TSEG2:1+1=6 Tq
+		p->CANBTR1 |= MSCAN_CANBTR1_TSEG1(0x03);// TSEG1:3+1=13 Tq
+		break;
+	}
 
     //配置工作模式
     if(LOOP_MODE == mode)
@@ -111,10 +124,10 @@ void CAN_Init(uint_8 mode,uint_8 open_filter,uint_32 acc_id)
     //NVIC_EnableIRQ(30);
 
     //等待应答初始化模式
-    while ((p->CANCTL1 & MSCAN_CANCTL1_INITAK_MASK) == 1);
+    while ((p->CANCTL1 & MSCAN_CANCTL1_INITAK_MASK) == 1){}
 
     //等待总线通信时钟同步
-    while ((p->CANCTL0 & MSCAN_CANCTL0_SYNCH_MASK) == 0);
+    while ((p->CANCTL0 & MSCAN_CANCTL0_SYNCH_MASK) == 0){}
 }
 
 //===========================================================================

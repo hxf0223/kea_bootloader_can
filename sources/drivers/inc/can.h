@@ -9,10 +9,9 @@
 #ifndef CAN_H       //防止重复定义（can_H  开头)
 #define CAN_H
 
-//#include "includes.h"   //包含头文件
 #include <stdint.h>
+#include "can_common.h"
 #include "common.h"
-
 
 #define LOOP_MODE     0
 #define NORMAL_MODE   1
@@ -40,7 +39,7 @@ typedef struct CanMsg
 //        acc_id:接受ID，接收过滤器只接收标识符符合此ID的帧，过滤其他ID的帧
 //函数返回：无
 //===========================================================================
-void CAN_Init(uint_8 mode,uint_8 open_filter,uint_32 acc_id);
+void mscan_init(uint_8 mode,uint_8 open_filter,uint_32 acc_id, can_baud_rate_e baudRate);
 
 //===========================================================================
 //函数名称：CAN_Fill_STD_Msg

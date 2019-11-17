@@ -2,7 +2,7 @@
 #define _HSI_2515_H_
 
 
-//#include "global_define.h"
+#include "can_common.h"
 #include "dev_2515.h"
 
 /*
@@ -51,7 +51,7 @@
 #define DEFAULT_CANCTR				REQOP_NORMAL| CLKOUT_ENABLED
 
 
-extern byte hsi_2515_init(byte channel);
+extern byte hsi_2515_init(byte channel, can_baud_rate_e baudRate);
 extern byte hsi_2515_can_send_buffer(byte channel,uint32_t id,byte *can_tx_buf,byte len,byte can_type);
 extern byte hsi_2515_can_receive_buffer(byte channel,byte *CAN_RX_Buf, byte bufCapacity,byte *flag,uint32_t *id,byte *lenth);
 extern uint8_t acan_flag;

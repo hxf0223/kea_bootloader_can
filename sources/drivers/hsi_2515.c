@@ -10,53 +10,55 @@
 * 返回值  : 无
 * 说明    : 将内部寄存器复位为缺省状态,并将器件设定为配置模式
 *******************************************************************************/
-void hsi_2515_reset(byte channel,byte cmd)
-{
+static void hsi_2515_reset(byte channel,byte cmd) {
 	dev_2515_reset(channel,cmd);
 }
 
-void hsi_2515_config_rate(byte channel,byte baud_rate)
-{
-/*
- * 配置需满足一下条件：
- * 传播段+相位缓冲段PS1 >= 相位缓冲段PS2
- * 传播段+相位缓冲段PS1 >= Tdelay(默认为1~2TQ)
- * 相位缓冲段PS2 > 同步跳转宽带SJW(默认为1TQ)
- */
-	byte cnf1_data = baud_rate, cnf2_data, cnf3_data;
+static void hsi_2515_config_rate(byte channel, can_baud_rate_e baudRate) {
+	/* 配置需满足一下条件：
+	 * 传播段+相位缓冲段PS1 >= 相位缓冲段PS2
+	 * 传播段+相位缓冲段PS1 >= Tdelay(默认为1~2TQ)
+	 * 相位缓冲段PS2 > 同步跳转宽带SJW(默认为1TQ) */
+	byte cnf1_data, cnf2_data, cnf3_data;
 
-	switch ( baud_rate )
-	{
-	case CAN_500Kbps:	// 8Mhz/(2*(baud_rate+1)) = 4Mhz ;	4Mhz/(1TQ+PHSEG1_3TQ+PRSEG_1TQ+PHSEG2_3TQ) = 500Khz
-		cnf2_data = 0x80|PHSEG1_3TQ|PRSEG_1TQ;
+	switch (baudRate) {
+	case can_baud_rate_500k:	// 8Mhz / (2*(baud_rate+1)) = 4Mhz ;	4Mhz/(1TQ+PHSEG1_3TQ+PRSEG_1TQ+PHSEG2_3TQ) = 500Khz
+		cnf1_data = CAN_500Kbps;
+		cnf2_data = 0x80 | PHSEG1_3TQ | PRSEG_1TQ;
 		cnf3_data = PHSEG2_3TQ;
 		break;
-	case CAN_250Kbps:	// 8Mhz/(2*(baud_rate+1)) = 2Mhz ;	2Mhz/(1TQ+PHSEG1_3TQ+PRSEG_1TQ+PHSEG2_3TQ) = 250Khz
-		cnf2_data = 0x80|PHSEG1_3TQ|PRSEG_1TQ;
+
+	case can_baud_rate_250k:	// 8Mhz / (2*(baud_rate+1)) = 2Mhz ;	2Mhz/(1TQ+PHSEG1_3TQ+PRSEG_1TQ+PHSEG2_3TQ) = 250Khz
+		cnf1_data = CAN_250Kbps;
+		cnf2_data = 0x80 | PHSEG1_3TQ | PRSEG_1TQ;
 		cnf3_data = PHSEG2_3TQ;
 		break;
-	/*case CAN_125Kbps:	// 8Mhz/(2*(baud_rate+1)) = 1Mhz ;	1Mhz/(1TQ+PHSEG1_3TQ+PRSEG_1TQ+PHSEG2_3TQ) = 125Khz
+		
+	/*case can_baud_rate_125k:	// 8Mhz / (2*(baud_rate+1)) = 1Mhz ;	1Mhz/(1TQ+PHSEG1_3TQ+PRSEG_1TQ+PHSEG2_3TQ) = 125Khz
 		cnf2_data = 0x80|PHSEG1_3TQ|PRSEG_1TQ;
 		cnf3_data = PHSEG2_3TQ;
 		break;*/
-	case CAN_100Kbps:	// 8Mhz/(2*(baud_rate+1)) = 800Khz ;8Khz/(1TQ+PHSEG1_3TQ+PRSEG_1TQ+PHSEG2_3TQ) = 100Khz
-		cnf2_data = 0x80|PHSEG1_3TQ|PRSEG_1TQ;
+		
+	case can_baud_rate_100k:	// 8Mhz / (2*(baud_rate+1)) = 800Khz ;8Khz/(1TQ+PHSEG1_3TQ+PRSEG_1TQ+PHSEG2_3TQ) = 100Khz
+		cnf1_data = CAN_100Kbps;
+		cnf2_data = 0x80 | PHSEG1_3TQ | PRSEG_1TQ;
 		cnf3_data = PHSEG2_3TQ;
 		break;
-	default:
+		
+	default:	// default to 125k
 		cnf1_data = CAN_125Kbps;
-		cnf2_data = 0x80|PHSEG1_3TQ|PRSEG_1TQ;
+		cnf2_data = 0x80 | PHSEG1_3TQ | PRSEG_1TQ;
 		cnf3_data = PHSEG2_3TQ;
 		break;
 	}
 
-	//设置波特率为125Kbps
-	//set CNF1,SJW=00,长度为1TQ,BRP=49,TQ=[2*(BRP+1)]/Fsoc=2*50/8M=12.5us
-	dev_2515_send_register(channel,CNF1,cnf1_data);	// 8Mhz/(2*(baud_rate+1)) = 1Mhz ; 1Mhz/(1TQ+PHSEG1_3TQ+PRSEG_1TQ+PHSEG2_3TQ) = 125Khz
-	//set CNF2,SAM=0,在采样点对总线进行一次采样，PHSEG1=(2+1)TQ=3TQ,PRSEG=(0+1)TQ=1TQ
-	dev_2515_send_register(channel,CNF2,cnf2_data);
-	//set CNF3,PHSEG2=(2+1)TQ=3TQ,同时当CANCTRL.CLKEN=1时设定CLKOUT引脚为时间输出使能位
-	dev_2515_send_register(channel,CNF3,cnf3_data);
+	// 设置波特率为125Kbps
+	// set CNF1,SJW=00,长度为1TQ,BRP=49,TQ=[2*(BRP+1)]/Fsoc=2*50/8M=12.5us
+	dev_2515_send_register(channel, CNF1, cnf1_data);	// 8Mhz/(2*(baud_rate+1)) = 1Mhz ; 1Mhz/(1TQ+PHSEG1_3TQ+PRSEG_1TQ+PHSEG2_3TQ) = 125Khz
+	// set CNF2,SAM=0,在采样点对总线进行一次采样，PHSEG1=(2+1)TQ=3TQ,PRSEG=(0+1)TQ=1TQ
+	dev_2515_send_register(channel, CNF2, cnf2_data);
+	// set CNF3,PHSEG2=(2+1)TQ=3TQ,同时当CANCTRL.CLKEN=1时设定CLKOUT引脚为时间输出使能位
+	dev_2515_send_register(channel, CNF3, cnf3_data);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -64,7 +66,7 @@ void hsi_2515_config_rate(byte channel,byte baud_rate)
 byte hsi_2515_set_standard_id(byte channel,uint16_t standard_id,uint32_t extended_id,byte mode)
 {
 	byte id_high,id_low;
-	if(standard_id>STANDARD_MAX || extended_id>EXTENDED_MAX)
+	if(standard_id > STANDARD_MAX || extended_id > EXTENDED_MAX)
 		return 1;
 
 	if(mode==EXTENDED_DATA_FRAME)
@@ -83,24 +85,22 @@ byte hsi_2515_set_standard_id(byte channel,uint16_t standard_id,uint32_t extende
 	dev_2515_send_register(channel,TXB0SIDL,id_low);//发送缓冲器0标准标识符低位
 	return 0;
 }
-byte hsi_2515_set_extended_id(byte channel,uint32_t extended_id)
+
+byte hsi_2515_set_extended_id(byte channel, uint32_t extended_id)
 {
-	byte id_high,id_low;
-	if(extended_id>EXTENDED_MAX)
+	if(extended_id > EXTENDED_MAX)
 		return 1;
 
-	id_high = (byte)(extended_id>>8);
-	id_low = (byte)extended_id;
+	const byte id_high = (byte)(extended_id >> 8);
+	const byte id_low = (byte)extended_id;
 
 	dev_2515_send_register(channel,TXB0EID8,id_high);//发送缓冲器0标准标识符高位
 	dev_2515_send_register(channel,TXB0EID0,id_low);//发送缓冲器0标准标识符低位
 	return 0;
 }
 
-byte hsi_2515_set_txb0dlc(byte channel,byte data_length,byte mode)
-{
-	byte remote_request;
-	remote_request = data_length;
+static void hsi_2515_set_txb0dlc(byte channel, byte data_length, byte mode) {
+	const byte remote_request = data_length;
 	dev_2515_send_register(channel,TXB0DLC,remote_request);//将本帧待发送的数据长度写入发送缓冲器0的发送长度寄存器
 }
 
@@ -145,12 +145,11 @@ byte hsi_2515_config_standard_recv_id(byte channel,uint16_t standard_id,uint32_t
 
 byte hsi_2515_config_extended_recv_id(byte channel,uint32_t extended_id)
 {
-	byte id_high,id_low;
-	if(extended_id>EXTENDED_MAX)
+	if(extended_id > EXTENDED_MAX)
 		return 1;
 
-	id_high = (byte)(extended_id>>8);
-	id_low = (byte)extended_id;
+	const byte id_high = (byte)(extended_id >> 8);
+	const byte id_low = (byte)extended_id;
 
 	dev_2515_send_register(channel,RXB0EID8,id_high);//发送缓冲器0标准标识符高位
 	dev_2515_send_register(channel,RXB0EID0,id_low);//发送缓冲器0标准标识符低位
@@ -192,12 +191,11 @@ byte hsi_2515_config_standard_recv_rxf0(byte channel,uint16_t standard_id,uint32
 
 byte hsi_2515_config_extended_recv_rxf0_eid(byte channel,uint32_t extended_id)
 {
-	byte id_high,id_low;
 	if(extended_id>EXTENDED_MAX)
 		return 1;
 
-	id_high = (byte)(extended_id>>8);
-	id_low = (byte)extended_id;
+	const byte id_high = (byte)(extended_id >> 8);
+	const byte id_low = (byte)extended_id;
 
 	dev_2515_send_register(channel,RXF0EID8,id_high);//发送缓冲器0标准标识符高位
 	dev_2515_send_register(channel,RXF0EID0,id_low);//发送缓冲器0标准标识符低位
@@ -221,6 +219,7 @@ byte hsi_2515_config_standard_recv_rxm0(byte channel,uint16_t standard_id,uint32
 		id_high = (byte)(standard_id>>3);
 		id_low = (byte)(standard_id<<5);
 	}
+	
 	dev_2515_send_register(channel,RXM0SIDH,id_high);//配置验收屏蔽寄存器n标准标识符高位
 	dev_2515_send_register(channel,RXM0SIDL,id_low);//配置验收屏蔽寄存器n标准标识符低位
 	return 0;
@@ -228,12 +227,11 @@ byte hsi_2515_config_standard_recv_rxm0(byte channel,uint16_t standard_id,uint32
 
 byte hsi_2515_config_extended_recv_rxm0_eid(byte channel,uint32_t extended_id)
 {
-	byte id_high,id_low;
-	if(extended_id>EXTENDED_MAX)
+	if(extended_id > EXTENDED_MAX)
 		return 1;
 
-	id_high = (byte)(extended_id>>8);
-	id_low = (byte)extended_id;
+	const byte id_high = (byte)(extended_id >> 8);
+	const byte id_low = (byte)extended_id;
 
 	dev_2515_send_register(channel,RXM0EID8,id_high);//发送缓冲器0标准标识符高位
 	dev_2515_send_register(channel,RXM0EID0,id_low);//发送缓冲器0标准标识符低位
@@ -245,7 +243,7 @@ void hsi_2515_config_canintf(byte channel,byte clear_interrupt_flag)
 	dev_2515_send_register(channel,CANINTF,clear_interrupt_flag);//清空CAN中断标志寄存器的所有位(必须由MCU清空)
 }
 
-byte hsi_2515_config_caninte(byte channel,byte enable_or_disable)
+void hsi_2515_config_caninte(byte channel, byte enable_or_disable)
 {
 	dev_2515_send_register(channel,CANINTE,enable_or_disable);//配置CAN中断使能寄存器的接收缓冲器0满中断使能,其它位禁止中断
 }
@@ -258,39 +256,34 @@ byte hsi_2515_config_caninte(byte channel,byte enable_or_disable)
 * 返回值  : 无
 * 说明    : 初始化包括：软件复位、工作波特率设置、标识符相关配置等。
 *******************************************************************************/
-byte hsi_2515_init(byte channel)
+byte hsi_2515_init(byte channel, can_baud_rate_e baudRate)
 {
-	byte ret,temp;
+	byte temp;
 	uint16_t standard_id;
 	uint32_t extended_id;
-	byte	can_work_mode;
-	byte	rxb0ctrl;
-	byte baud_rate;
-	if(channel==A_CAN_CHANNEL)
-	{
+	byte can_work_mode;
+	byte rxb0ctrl;
+	
+	if( channel == A_CAN_CHANNEL ) {
 		standard_id = DEFAULT_STANDARD_SEND_ID0;
 		extended_id = DEFAULT_EXTENDED_SEND_ID0;
 		can_work_mode = DEFAULT_CAN_WORK_MODE0;
 		rxb0ctrl = DEFAULT_2515_RXB0CTRL0;
-		baud_rate = DEFAULT_BAUD_RATE0;
-	}
-	else
-	{
+	} else {
 		standard_id = DEFAULT_STANDARD_SEND_ID1;
 		extended_id = DEFAULT_EXTENDED_SEND_ID1;
 		can_work_mode = DEFAULT_CAN_WORK_MODE1;
 		rxb0ctrl = DEFAULT_2515_RXB0CTRL1;
-		baud_rate = DEFAULT_BAUD_RATE1;
 	}
 
 	//--------------------reset------------------------
-	hsi_2515_reset(channel,CAN_RESET);						// 上电或者复位后，默认进入 配置模式
-	hsi_2515_config_rate(channel,baud_rate);		// 波特率
+	hsi_2515_reset(channel,CAN_RESET);		// 上电或者复位后，默认进入 配置模式
+	hsi_2515_config_rate(channel, baudRate);	// 波特率
 
 	//--------------------tx---------------------------
-	hsi_2515_set_standard_id(channel,standard_id,extended_id,can_work_mode);
-	hsi_2515_set_extended_id(channel,extended_id);
-	hsi_2515_set_txb0dlc(channel,DLC_8,can_work_mode);
+	hsi_2515_set_standard_id(channel, standard_id, extended_id, can_work_mode);
+	hsi_2515_set_extended_id(channel, extended_id);
+	hsi_2515_set_txb0dlc(channel,DLC_8, can_work_mode);
 
 	//--------------------rx---------------------------
 	hsi_2515_config_recv_rxb0ctrl(channel,rxb0ctrl);
@@ -305,11 +298,10 @@ byte hsi_2515_init(byte channel)
 	hsi_2515_config_caninte(channel,DEFAULT_CANINTE);
 
 	//--------------------start---------------------------
-	hsi_2515_config_work_mode(channel,DEFAULT_CANCTR);//将MCP2515设置为正常模式,退出配置模式
+	hsi_2515_config_work_mode(channel,DEFAULT_CANCTR);	// 将MCP2515设置为正常模式,退出配置模式
 
-	ret=dev_2515_recv_register(channel,CANSTAT,&temp);//读取CAN状态寄存器的值
-	if ( OPMODE_NORMAL!=(temp&&0xE0) )	//判断MCP2515是否已经进入正常模式
-	{
+	byte ret = dev_2515_recv_register(channel,CANSTAT, &temp);	// 读取CAN状态寄存器的值
+	if ( OPMODE_NORMAL != (temp & 0xE0) ) {		// 判断MCP2515是否已经进入正常模式
 		hsi_2515_config_work_mode(channel,DEFAULT_CANCTR);
 	}
 

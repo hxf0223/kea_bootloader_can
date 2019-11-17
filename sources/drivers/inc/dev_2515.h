@@ -8,7 +8,7 @@
 //#include "hsi_gpio_ctrol.h"
 
 
-typedef unsigned char           byte;
+typedef unsigned char	byte;
 
 #define PORT_A  A
 #define PORT_B  A
@@ -48,18 +48,6 @@ typedef unsigned char           byte;
 //------------------CAN--output------------------------------------------
 #define O_D_ACAN_CS(X)		LOCAL_OUTPUT_DATA(PORT_E,3,X)
 #define O_D_DCAN_CS(X)		LOCAL_OUTPUT_DATA(PORT_E,4,X)
-
-
-
-#define CAN_100K	0x04
-#define CAN_125K	0x03
-#define CAN_250K	0X01//0x02
-#define	CAN_500K	0x00
-
-#define ACAN_BAUD_RATE_SET			CAN_250K//CAN_100K//CAN_125K//CAN_250K//CAN_500K
-#define DCAN_BAUD_RATE_SET			CAN_500K//CAN_100K//CAN_125K//CAN_250K//CAN_500K
-
-
 
 #define DEV_2515_ERROR_RECV_DATA	0XFA
 #define DEV_2515_ERROR_SEND_DATA	0XFB
@@ -511,7 +499,6 @@ typedef unsigned char           byte;
 #define EXIDE_RESET     0x00
 
 
-//-------------------------添加-------------------------------------------
 // 0x32
 #define EXIDE	0X08
 #define RTR		0X40
@@ -524,13 +511,13 @@ typedef unsigned char           byte;
 #define RXB0SIDL_IDE_0	0X04
 
 
-//MCP2515波特率预分频/基于2515晶振频率8Mhz
-//#define	CAN_10Kbps	0x31
+// MCP2515波特率预分频/基于2515晶振频率8Mhz
+//#define CAN_10Kbps	0x31
 //#define CAN_25Kbps	0x13
 //#define CAN_50Kbps	0x09
 #define CAN_100Kbps	0x04
 #define CAN_125Kbps	0x03
-#define CAN_250Kbps	0X01//0x02
+#define CAN_250Kbps	0X01	// 0x02
 #define	CAN_500Kbps	0x00
 
 extern byte dev_2515_send_register(byte channel,byte address,byte data);

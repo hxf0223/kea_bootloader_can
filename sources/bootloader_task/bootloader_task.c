@@ -5,6 +5,7 @@
  *      Author: Administrator
  */
 
+#include <string.h>
 #include "ring_buffer.h"
 #include "flash_task.h"
 #include "bootloader_task.h"

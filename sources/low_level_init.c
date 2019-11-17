@@ -22,10 +22,10 @@ void low_level_init(void) {
 	GPIOB_Init();
 	SPI0_Init();
 	SPI1_Init();
-	hsi_2515_init(D_CAN_CHANNEL);
-	hsi_2515_init(A_CAN_CHANNEL);
+	hsi_2515_init(D_CAN_CHANNEL, can_baud_rate_250k);
+	hsi_2515_init(A_CAN_CHANNEL, can_baud_rate_250k);
 
-	CAN_Init(1, 0, 0);
+	mscan_init(1, 0, 0, can_baud_rate_250k);
 	O_D_CAN_Silent_OUT;
 	O_D_CAN_Silent_Disable;
 
