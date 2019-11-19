@@ -41,7 +41,7 @@ typedef struct {
 	flash_frame_progress_t fp;
 	uint32_t app_entry_address;		// app's entry address
 	uint32_t next_erase_address;
-	uint32_t file_size;				// actually whole download data size
+	uint32_t file_size;			// actually whole download data size
 	uint32_t file_size_accu;		// actually whole download data size accumulator
 
 	// first sector buffer, flash at last
@@ -101,7 +101,7 @@ static uint8_t do_flash2(uint32_t address, uint8_t* buffer, uint16_t size) {
 	}
 
 #ifndef DEBUG_NO_ERASE
-	uint16_t err = FLASH_Program(address, buffer, size);
+	const uint16_t err = FLASH_Program(address, buffer, size);
 	return (err == FLASH_ERR_SUCCESS);
 #else
 	return 1;
@@ -129,7 +129,6 @@ typedef struct {
 
 static void ok_response(uint8_t command, uint8_t* data, uint8_t dataLength) {
 	uint16_t offset = 0;
-	uint8_t crc8;
 	CANMsg msg;
 
 	init_can_frame(&msg);
@@ -138,7 +137,7 @@ static void ok_response(uint8_t command, uint8_t* data, uint8_t dataLength) {
 		msg.m_data[offset++] = data[i];
 	}
 
-	crc8 = cal_crc_table(msg.m_data, offset, 0xff);
+	const uint8_t crc8 = cal_crc_table(msg.m_data, offset, 0xff);
 	msg.m_data[offset++] = crc8;
 
 	msg.m_dataLen = offset;
@@ -147,14 +146,13 @@ static void ok_response(uint8_t command, uint8_t* data, uint8_t dataLength) {
 
 static void error_response(uint8_t command, uint8_t errCode) {
 	uint16_t offset = 0;
-	uint8_t crc8;
 	CANMsg msg;
 
 	init_can_frame(&msg);
 	msg.m_data[offset++] = FP_ERROR_RESPONSE;
 	msg.m_data[offset++] = command + FP_RESPONSE_ADD_VALUE;
 	msg.m_data[offset++] = errCode;
-	crc8 = cal_crc_table(msg.m_data, offset, 0xff);
+	const uint8_t crc8 = cal_crc_table(msg.m_data, offset, 0xff);
 	msg.m_data[offset++] = crc8;
 
 	msg.m_dataLen = offset;
@@ -172,7 +170,7 @@ static uint8_t common_error_response( uint8_t command, uint8_t* pData, uint16_t 
 		return 0;
 	}
 
-	uint8_t crc8 = cal_crc_table(pData, len-1, 0xff);
+	const uint8_t crc8 = cal_crc_table(pData, len-1, 0xff);
 	if ( crc8 != pData[len-1] ) {
 		error_response(command, FP_RESPONSE_ERR_CODE_CRC);
 		return 0;
@@ -185,8 +183,7 @@ static uint8_t common_error_response( uint8_t command, uint8_t* pData, uint16_t 
 // client query in 6 bytes, response in 2 bytes
 static uint8_t command_process_start( uint8_t* pData, uint16_t len, void* param ) {
 	flash_progress_t* pfp = (flash_progress_t*)param;
-	uint8_t command = FP_COMMAND_START;
-	uint16_t r_offset;
+	const uint8_t command = FP_COMMAND_START;
 
 	if ( !pData || !len ) {
 		pfp->next_fp_state = fp_state_wait_start;
@@ -194,7 +191,7 @@ static uint8_t command_process_start( uint8_t* pData, uint16_t len, void* param 
 	}
 
 	/* parse */
-	r_offset = 1;
+	const uint16_t r_offset = 1;
 	flash_progress_reset(pfp);
 	pfp->file_size = get_u32_from_stream(pData, r_offset);
 	pfp->app_entry_address = APP_ENTRY_ADDRESS;
@@ -209,7 +206,7 @@ static uint8_t command_process_query_capacity( uint8_t* pData, uint16_t len, voi
 	flash_progress_t* pfp = (flash_progress_t*)param;
 	uint8_t send_data[2];
 
-	uint16_t capacity = FP_BUFFER_SIZE;
+	const uint16_t capacity = FP_BUFFER_SIZE;
 	pfp->next_fp_state = fp_state_command_frame_start;
 	put_u16_to_stream(capacity, send_data, 0);
 	ok_response(FP_QUERY_CAPACITY, send_data, 2);
@@ -220,12 +217,11 @@ static uint8_t command_process_query_capacity( uint8_t* pData, uint16_t len, voi
 // client query in 8 bytes, response in 2 bytes
 static uint8_t command_process_frame_start( uint8_t* pData, uint16_t len, void* param ) {
 	flash_progress_t* pfp = (flash_progress_t*)param;
-	uint8_t command = FP_COMMAND_FRAME_START;
+	const uint8_t command = FP_COMMAND_FRAME_START;
 	uint8_t erase_flag[1] = {0};
-	uint16_t r_offset;
 
 	/* parse */
-	r_offset = 1;
+	uint16_t r_offset = 1;
 	pfp->fp.address = get_u32_from_stream(pData, r_offset); r_offset += 4;
 	pfp->fp.frame_size = get_u16_from_stream(pData, r_offset); r_offset += 2;
 	pfp->fp.receive_size = 0;
@@ -259,20 +255,16 @@ static uint8_t command_process_frame_start( uint8_t* pData, uint16_t len, void* 
 // client query in 7 bytes, response in 2 bytes
 static uint8_t command_process_frame_finish( uint8_t* pData, uint16_t len, void* param ) {
 	flash_progress_t* pfp = (flash_progress_t*)param;
-	uint8_t command = FP_COMMAND_FRAME_FINISH;
-	uint8_t calc_crc8, client_frame_crc8;
-	uint32_t address;
-	uint16_t r_offset;
+	const uint8_t command = FP_COMMAND_FRAME_FINISH;
 
 	/* parse */
-	r_offset = 1;
-	address = get_u32_from_stream(pData, r_offset); r_offset += 4;
-	client_frame_crc8 = pData[r_offset++];
+	uint16_t r_offset = 1;
+	const uint32_t address = get_u32_from_stream(pData, r_offset); r_offset += 4;
+	const uint8_t client_frame_crc8 = pData[r_offset++];
 
 	/* response */
 	if ( pfp->fp.data_err_code ) {
-		uint8_t data_err_code = pfp->fp.data_err_code;
-		error_response(command, data_err_code);
+		error_response(command, pfp->fp.data_err_code);
 		return 0;
 	}
 
@@ -281,7 +273,7 @@ static uint8_t command_process_frame_finish( uint8_t* pData, uint16_t len, void*
 		return 0;
 	}
 
-	calc_crc8 = cal_crc_table(pfp->fp.buffer, pfp->fp.frame_size, 0xff);
+	const uint8_t calc_crc8 = cal_crc_table(pfp->fp.buffer, pfp->fp.frame_size, 0xff);
 	if ( calc_crc8 != client_frame_crc8 ) {
 		error_response(command, FP_RESPONSE_ERR_CODE_DATA_CRC);
 		return 0;
@@ -293,7 +285,7 @@ static uint8_t command_process_frame_finish( uint8_t* pData, uint16_t len, void*
 			return 0;
 		}
 	} else {
-		uint16_t ff_offset = pfp->fp.address - APP_ENTRY_ADDRESS;
+		const uint16_t ff_offset = pfp->fp.address - APP_ENTRY_ADDRESS;
 		memcpy2(pfp->first_sector_buff + ff_offset, pfp->fp.buffer, pfp->fp.frame_size);
 	}
 
@@ -337,7 +329,7 @@ static uint8_t command_process_data_transfer(uint8_t* pData, uint16_t len, void*
 // client query in 3 bytes, response in 3 bytes
 static uint8_t command_process_verify(uint8_t* pData, uint16_t len, void* param) {
 	flash_progress_t* pfp = (flash_progress_t*)param;
-	uint8_t command = FP_COMMAND_VERIFY;
+	const uint8_t command = FP_COMMAND_VERIFY;
 
 	if ( !do_flash2(pfp->app_entry_address, pfp->first_sector_buff, FLASH_SECTOR_SIZE) ) {
 		error_response(command, FP_RESPONSE_ERR_CODE_FLASH_FAIL);
@@ -378,8 +370,8 @@ static flash_task_init_data_t g_init_data = { NULL, NULL };
 static const command_process_t g_command_process_list[] = {	// data driven
 	{fp_state_wait_start, 			/*FP_COMMAND_START,*/ 		6, command_process_start, 			&g_fp, common_error_response},
 	{fp_state_query_capacity, 		/*FP_QUERY_CAPACITY,*/ 		2, command_process_query_capacity, 	&g_fp, common_error_response},
-	{fp_state_command_frame_start, 	/*FP_COMMAND_FRAME_START,*/ 8, command_process_frame_start, 	&g_fp, common_error_response},
-	{fp_state_command_frame_finish, /*FP_COMMAND_FRAME_FINISH,*/7, command_process_frame_finish, 	&g_fp, common_error_response},
+	{fp_state_command_frame_start, /*FP_COMMAND_FRAME_START,*/ 8, command_process_frame_start, 	&g_fp, common_error_response},
+	{fp_state_command_frame_finish,/*FP_COMMAND_FRAME_FINISH,*/7, command_process_frame_finish, 	&g_fp, common_error_response},
 	{fp_state_data_transfer, 		/*FP_COMMAND_INVALID,*/ 	8, command_process_data_transfer, 	&g_fp, NULL},
 	{fp_state_command_verify, 		/*FP_COMMAND_VERIFY,*/ 		3, command_process_verify, 			&g_fp, common_error_response},
 	{fp_state_command_boot, 		/*FP_COMMAND_BOOT,*/ 		2, command_process_boot, 			&g_fp, common_error_response}
@@ -424,7 +416,7 @@ static void flash_progress_reset_all() {
 
 uint32_t flash_task_run() {
 	uint8_t cmd_err, buff[CAN_FRAME_LEN];
-	uint16_t receive_num = ring_buffer_pop(g_init_data.rb_rx, buff, CAN_FRAME_LEN);
+	const uint16_t receive_num = ring_buffer_pop(g_init_data.rb_rx, buff, CAN_FRAME_LEN);
 	command_process_t* cmd_process = find_command_process(g_fp_state);
 
 	if ( receive_num == 0 ) {
@@ -447,7 +439,7 @@ uint32_t flash_task_run() {
 
 	if ( NULL != cmd_process ) {
 		if ( cmd_process->err_check_func ) {
-			uint16_t cmd_len = cmd_process->command_len;
+			const uint16_t cmd_len = cmd_process->command_len;
 			cmd_err = cmd_process->err_check_func(buff[0], buff, cmd_len);
 			if ( !cmd_err ) goto fail_process;
 		}

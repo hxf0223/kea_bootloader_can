@@ -19,7 +19,7 @@ static inline void ring_buffer_push_byte( ring_buffer_t* rb, uint8_t b ) {
 }
 
 static inline uint8_t ring_buffer_pop_byte ( ring_buffer_t* rb ) {
-	uint8_t b = rb->buff[rb->tail];
+	const uint8_t b = rb->buff[rb->tail];
 	rb->tail = (rb->tail+1) % RING_BUFFER_SIZE;
 	return b;
 }

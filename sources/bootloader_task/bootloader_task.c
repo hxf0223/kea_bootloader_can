@@ -5,6 +5,7 @@
  *      Author: Administrator
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include "ring_buffer.h"
 #include "flash_task.h"
@@ -20,6 +21,7 @@ void bootloader_task_init(void* p) {
 	flash_task_init_data_t ft_init_data;
 	ft_init_data.rb_rx = &g_rb_rx;
 	ft_init_data.rb_tx = NULL;
+	flash_task_init(&ft_init_data);
 }
 
 

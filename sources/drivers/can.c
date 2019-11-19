@@ -29,14 +29,14 @@ void mscan_init(uint_8 mode,uint_8 open_filter,uint_32 acc_id, can_baud_rate_e b
     //SIM_SCGC的MSCAN位=0：禁止总线给MSCAN时钟
     SIM_SCGC |=(uint_32)(SIM_SCGC_MSCAN_MASK);
 
-    //MSCAN12模块使能
+    // MSCAN12模块使能
     p->CANCTL1 |= MSCAN_CANCTL1_CANE_MASK;
 
-    //请求进入初始化模式
+    // 请求进入初始化模式
     p->CANCTL0 |= MSCAN_CANCTL0_INITRQ_MASK;
 
     //等待应答进入初始化模式
-    while ((p->CANCTL1 & MSCAN_CANCTL1_INITAK_MASK)== 0);
+    while ((p->CANCTL1 & MSCAN_CANCTL1_INITAK_MASK)== 0){}
 
     if(open_filter)         //开启接收过滤器,只接收标示符为acc_id的帧
     {
@@ -45,10 +45,10 @@ void mscan_init(uint_8 mode,uint_8 open_filter,uint_32 acc_id, can_baud_rate_e b
 
         // 第1个32位滤波器
         // 设置接受寄存器的值
-        p->CANIDAR_BANK_1[0]=acc_id>>3;
-        p->CANIDAR_BANK_1[1]=acc_id<<5;
-        p->CANIDAR_BANK_1[2]=0xFF;
-        p->CANIDAR_BANK_1[3]=0xFF;
+        p->CANIDAR_BANK_1[0] = acc_id >> 3;
+        p->CANIDAR_BANK_1[1] = acc_id << 5;
+        p->CANIDAR_BANK_1[2] = 0xFF;
+        p->CANIDAR_BANK_1[3] = 0xFF;
 
         // 设置屏蔽寄存器的值
         p->CANIDMR_BANK_1[0]=0x00;
@@ -69,7 +69,7 @@ void mscan_init(uint_8 mode,uint_8 open_filter,uint_32 acc_id, can_baud_rate_e b
         p->CANIDMR_BANK_2[2]=0xFF;
         p->CANIDMR_BANK_2[3]=0xFF;
     }
-    else//关闭过滤器
+    else //关闭过滤器
     {
         for (uint_8 i = 0; i < 16; i++)
         {
@@ -97,19 +97,19 @@ void mscan_init(uint_8 mode,uint_8 open_filter,uint_32 acc_id, can_baud_rate_e b
 		break;
 
 	case can_baud_rate_125k:
-		p->CANBTR0 |= MSCAN_CANBTR0_BRP(0x1A);	// 模块时钟27分频
-		p->CANBTR1 |= MSCAN_CANBTR1_TSEG2(0x01);// TSEG2:1+1=6 Tq
-		p->CANBTR1 |= MSCAN_CANBTR1_TSEG1(0x03);// TSEG1:3+1=13 Tq
+		p->CANBTR0 |= MSCAN_CANBTR0_BRP(7);	// 模块时钟8分频
+		p->CANBTR1 |= MSCAN_CANBTR1_TSEG2(5);// TSEG2:5+1=6 Tq
+		p->CANBTR1 |= MSCAN_CANBTR1_TSEG1(12);// TSEG1:12+1=13 Tq
 		break;
 
 	default:	// default to 250k
-		p->CANBTR0 |= MSCAN_CANBTR0_BRP(0x0D);	// 模块时钟14分频
-		p->CANBTR1 |= MSCAN_CANBTR1_TSEG2(0x01);// TSEG2:1+1=6 Tq
-		p->CANBTR1 |= MSCAN_CANBTR1_TSEG1(0x03);// TSEG1:3+1=13 Tq
+		p->CANBTR0 |= MSCAN_CANBTR0_BRP(3);	// 模块时钟4分频
+		p->CANBTR1 |= MSCAN_CANBTR1_TSEG2(5);// TSEG2:5+1=6 Tq
+		p->CANBTR1 |= MSCAN_CANBTR1_TSEG1(12);// TSEG1:12+1=13 Tq
 		break;
 	}
 
-    //配置工作模式
+    // 配置工作模式
     if(LOOP_MODE == mode)
         p->CANCTL1 |= MSCAN_CANCTL1_LOOPB_MASK; // 开启回环模式
     p->CANCTL1 &= ~MSCAN_CANCTL1_LISTEN_MASK;   // 禁止侦听模式，即开启正常模式

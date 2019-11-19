@@ -45,8 +45,7 @@ int main(void)
 {
 	CANMsg can_msg;
 	volatile uint32_t* app_entry_address = (uint32_t*)APP_ENTRY_ADDRESS;
-	uint16_t flash_task_err, rec_num;
-	uint8_t ft_ok_response_delay;	// indicate if need flash task boot response delay
+	uint16_t flash_task_err;
 	non_volatile_config_t nv_config;
 	bootloader_task_init_data_t bl_task_init_data;
 	bl_task_init_data.nv_config_ram = &nv_config;
@@ -57,8 +56,7 @@ int main(void)
 	low_level_init();
 	StbM_Init();
 
-	uint8_t nonvc_err = nonvc_get_config(&nv_config);
-	if ( !nonvc_err ) {
+	if ( 0 == nonvc_get_config(&nv_config) ) {
 		can_interface_init_t ci_init_data;
 		ci_init_data.nonvc_can_tx_id = nv_config.config.can_id;
 		can_interface_init(&ci_init_data);
@@ -66,13 +64,21 @@ int main(void)
 
 	bootloader_task_init(&bl_task_init_data);
 
+#if 0	// used for CAN bus test
+	do {
+		uint8_t buff[8] = { 0 };
+		CAN_Fill_STD_Msg(&can_msg, BOOTLOADER_TX_CAN_ID, buff, 8);
+		CAN_Send_Msg(&can_msg);
+	} while (0);
+#endif
+	
 boot_flash_pos:
-	//flash_task_init();
-	ft_ok_response_delay = 0;
+	flash_task_start();
+	uint8_t ft_ok_response_delay = 0;
 
     do {
     	StbM_MainFunction();
-    	rec_num = can_receive(&can_msg);
+        const uint16_t rec_num = can_receive(&can_msg);
 		#if 0
     	if ( rec_num > 0 ) {
     		non_volatile_config_t temp;
@@ -99,11 +105,11 @@ boot_flash_pos:
 			if ( FLASH_TASK_RUN_ERR_FLASH_FINISH == flash_task_err )
     			ft_ok_response_delay = 1;
     		goto end_of_loop;
-    	} else if ( flash_task_err & 0x0f ) {
-			FLASH_EraseSector(APP_ENTRY_ADDRESS);
-			goto end_of_loop;
-		}
-		
+    	}
+        if ( flash_task_err & 0x0f ) {
+	        FLASH_EraseSector(APP_ENTRY_ADDRESS);
+	        goto end_of_loop;
+        }
     } while( 1 );
 
 end_of_loop:
@@ -113,7 +119,7 @@ end_of_loop:
 
     if ( ft_ok_response_delay ) {
     	StbM_MainFunction();
-    	uint16_t tm_resp = StbM_GetNowTick();
+        const uint16_t tm_resp = StbM_GetNowTick();
     	while ( StbM_Elapsed(tm_resp) < 2 ) {	// delay 2 ms
     		StbM_MainFunction();
     	}
@@ -151,7 +157,7 @@ end_of_loop:
 	/* Check if a valid application is loaded and jump to it */
 	JumpToUserApplication((uint32_t)app_entry_address, (uint32_t)app_entry_address + 4);
 
-    for (;;) {};
+    for (;;) {}
     return 0;
 }
 
