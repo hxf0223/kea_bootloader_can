@@ -39,16 +39,16 @@
 #include "flash_task.h"
 
 
-static void JumpToUserApplication(uint32_t userSP,  uint32_t userStartup);
+static void jump_to_user_app(uint32_t userSP,  uint32_t userStartup);
 
 int main(void)
 {
 	CANMsg can_msg;
-	volatile uint32_t* app_entry_address = (uint32_t*)APP_ENTRY_ADDRESS;
 	uint16_t flash_task_err;
 	non_volatile_config_t nv_config;
 	bootloader_task_init_data_t bl_task_init_data;
 	bl_task_init_data.nv_config_ram = &nv_config;
+	volatile uint32_t* app_entry_address = (uint32_t*)APP_ENTRY_ADDRESS;
 	
 	/*init_comm();
 	O_D_485_DE_RE_OUT;*/
@@ -152,25 +152,15 @@ end_of_loop:
 	//disable_comm();
 	reset_clock();
 
-	//LED1_DATA(1);//jason-171025 for test
-
 	/* Check if a valid application is loaded and jump to it */
-	JumpToUserApplication((uint32_t)app_entry_address, (uint32_t)app_entry_address + 4);
-
-    for (;;) {}
+	jump_to_user_app((uint32_t)app_entry_address, (uint32_t)app_entry_address + 4);
     return 0;
 }
 
-/**
- * Used to jump to the entry point of the user application
- * The Vector table of the user application must be located at 0x1000
- *
- * */
-typedef void (*iapfun)(void);
 
-void JumpToUserApplication( uint32_t userSP,  uint32_t userStartup )
-{
-	iapfun jump2app;
+typedef void (*iap_func_t)(void);
+void jump_to_user_app( uint32_t userSP,  uint32_t userStartup ) {
+	iap_func_t jump2app;
 
 	/* Set up stack pointer */
 	__asm("msr msp, r0");
@@ -178,7 +168,7 @@ void JumpToUserApplication( uint32_t userSP,  uint32_t userStartup )
 
 	/* Relocate vector table */
 	SCB->VTOR = (uint32_t)userSP;
-	jump2app = (iapfun)*(volatile uint32_t*)(userStartup);
+	jump2app = (iap_func_t)*(volatile uint32_t*)(userStartup);
 
 	/* Jump to application PC (r1) */
 	//__asm("mov pc, r1");
