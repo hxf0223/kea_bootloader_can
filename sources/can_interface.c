@@ -59,7 +59,6 @@ static uint8_t scan_receive( CANMsg* pMsg ) {
 
 typedef uint8_t (*can_transmit_func_t)(CANMsg* pMsg);
 typedef uint8_t (*can_receive_func_t)(CANMsg* pMsg);
-#define CAN_ENTRY_NUM		3
 
 typedef struct {
 	uint32_t rxid;
@@ -69,11 +68,15 @@ typedef struct {
 } can_entry_func_t;
 
 static uint8_t g_active_can_entry_id = 0xff;
-static can_entry_func_t g_can_entry[CAN_ENTRY_NUM] = {
+static can_entry_func_t g_can_entry[] = {
 		{BOOTLOADER_RX_CAN_ID, BOOTLOADER_TX_CAN_ID, scan_receive, scan_transmit},
+#if (ENABLE_MCP2515 == 1)
 		{BOOTLOADER_RX_CAN_ID, BOOTLOADER_TX_CAN_ID, acan_receive, acan_transmit},
 		{BOOTLOADER_RX_CAN_ID, BOOTLOADER_TX_CAN_ID, dcan_receive, dcan_transmit}
+#endif
 };
+
+#define CAN_ENTRY_NUM		(int)(sizeof(g_can_entry)/sizeof(g_can_entry[0]))
 
 uint8_t can_interface_init(const void* p) {
 	if ( NULL != p ) {

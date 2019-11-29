@@ -20,10 +20,13 @@ void low_level_init(void) {
 
 	GPIOA_Init();
 	GPIOB_Init();
+
+#if (ENABLE_MCP2515 == 1)
 	SPI0_Init();
 	SPI1_Init();
 	hsi_2515_init(D_CAN_CHANNEL, can_baud_rate_250k);
 	hsi_2515_init(A_CAN_CHANNEL, can_baud_rate_250k);
+#endif
 
 	mscan_init(1, 0, 0, can_baud_rate_250k);
 	O_D_CAN_Silent_OUT;

@@ -2,13 +2,11 @@
 #define _DEV_2515_H_
 
 #include <SKEAZ1284.h>
-//#include "PE_Types.h"
-//#include "PE_Error.h"
 #include "stdint.h"
-//#include "hsi_gpio_ctrol.h"
 
 
 typedef unsigned char	byte;
+#define ENABLE_MCP2515		0
 
 #define PORT_A  A
 #define PORT_B  A

@@ -54,7 +54,7 @@ int main(void)
 	O_D_485_DE_RE_OUT;*/
 
 	low_level_init();
-	StbM_Init();
+	stbm_init();
 
 	if ( 0 == nonvc_get_config(&nv_config) ) {
 		can_interface_init_t ci_init_data;
@@ -77,7 +77,7 @@ boot_flash_pos:
 	uint8_t ft_ok_response_delay = 0;
 
     do {
-    	StbM_MainFunction();
+    	stbm_main();
         const uint16_t rec_num = can_receive(&can_msg);
 		#if 0
     	if ( rec_num > 0 ) {
@@ -118,10 +118,10 @@ end_of_loop:
     }
 
     if ( ft_ok_response_delay ) {
-    	StbM_MainFunction();
-        const uint16_t tm_resp = StbM_GetNowTick();
-    	while ( StbM_Elapsed(tm_resp) < 2 ) {	// delay 2 ms
-    		StbM_MainFunction();
+    	stbm_main();
+        const uint16_t tm_resp = stbm_get_tick();
+    	while ( stbm_elapsed(tm_resp) < 2 ) {	// delay 2 ms
+    		stbm_main();
     	}
     }
 
@@ -143,7 +143,7 @@ end_of_loop:
 			   comm_download_app();
 			}
 		}
-		StbM_MainFunction();
+		Stbm_main();
 	} while((StbM_Elapsed(0)<500) & (!boot_from_comm));
 #endif
 

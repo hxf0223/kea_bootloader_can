@@ -5,7 +5,7 @@
 #include "memcpy2.h"
 #include "ring_buffer.h"
 #include "can_interface.h"
-#include "StbM.h"
+#include "stbm.h"
 #include "flash.h"
 #include "bootloader_command_def.h"
 #include "flash_task.h"
@@ -370,8 +370,8 @@ static flash_task_init_data_t g_init_data = { NULL, NULL };
 static const command_process_t g_command_process_list[] = {	// data driven
 	{fp_state_wait_start, 			/*FP_COMMAND_START,*/ 		6, command_process_start, 			&g_fp, common_error_response},
 	{fp_state_query_capacity, 		/*FP_QUERY_CAPACITY,*/ 		2, command_process_query_capacity, 	&g_fp, common_error_response},
-	{fp_state_command_frame_start, /*FP_COMMAND_FRAME_START,*/ 8, command_process_frame_start, 	&g_fp, common_error_response},
-	{fp_state_command_frame_finish,/*FP_COMMAND_FRAME_FINISH,*/7, command_process_frame_finish, 	&g_fp, common_error_response},
+	{fp_state_command_frame_start,  /*FP_COMMAND_FRAME_START,*/ 8, command_process_frame_start, 	&g_fp, common_error_response},
+	{fp_state_command_frame_finish, /*FP_COMMAND_FRAME_FINISH,*/7, command_process_frame_finish, 	&g_fp, common_error_response},
 	{fp_state_data_transfer, 		/*FP_COMMAND_INVALID,*/ 	8, command_process_data_transfer, 	&g_fp, NULL},
 	{fp_state_command_verify, 		/*FP_COMMAND_VERIFY,*/ 		3, command_process_verify, 			&g_fp, common_error_response},
 	{fp_state_command_boot, 		/*FP_COMMAND_BOOT,*/ 		2, command_process_boot, 			&g_fp, common_error_response}
@@ -400,7 +400,7 @@ void flash_task_start() {
 	g_fp.next_fp_state = fp_state_wait_start;
 	g_fp_state = fp_state_wait_start;
 
-	g_tm_wait_start = StbM_GetNowTick();
+	g_tm_wait_start = stbm_get_tick();
 	g_tm_ellapsed = 0;
 }
 
@@ -420,7 +420,7 @@ uint32_t flash_task_run() {
 	command_process_t* cmd_process = find_command_process(g_fp_state);
 
 	if ( receive_num == 0 ) {
-		g_tm_ellapsed = StbM_Elapsed(g_tm_wait_start);
+		g_tm_ellapsed = stbm_elapsed(g_tm_wait_start);
 		uint32_t return_err = (g_tm_ellapsed << 16);
 		
 		if ( g_fp_state == fp_state_wait_start ) {
@@ -435,7 +435,7 @@ uint32_t flash_task_run() {
 		return return_err;
 	}
 
-	g_tm_wait_start = StbM_GetNowTick();
+	g_tm_wait_start = stbm_get_tick();
 
 	if ( NULL != cmd_process ) {
 		if ( cmd_process->err_check_func ) {
