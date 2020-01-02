@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "pit.h": "c",
-        "stdlib.h": "c",
-        "common.h": "c"
-    }
-}
