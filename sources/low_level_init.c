@@ -28,7 +28,7 @@ void low_level_init(void) {
 	hsi_2515_init(A_CAN_CHANNEL, can_baud_rate_250k);
 #endif
 
-	mscan_init(1, 0, 0, can_baud_rate_250k);
+	mscan_init(1, 0, 0, can_baud_rate_500k);
 	O_D_CAN_Silent_OUT;
 	O_D_CAN_Silent_Disable;
 
