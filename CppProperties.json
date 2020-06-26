@@ -7,8 +7,8 @@
       "name": "gccarm",
       "includePath": [
         "${workspaceRoot}\\**",
-        "D:\\Freescale\\KDS_v3\\Toolchain\\arm-none-eabi\\include",
-        "D:\\Freescale\\KDS_v3\\Toolchain\\lib\\gcc\\arm-none-eabi\\4.8.4\\include"
+        "${env.KDS_ROOT}\\Toolchain\\arm-none-eabi\\include",
+        "${env.KDS_ROOT}\\Toolchain\\lib\\gcc\\arm-none-eabi\\4.8.4\\include"
       ],
       "defines": [
         "_DEBUG"

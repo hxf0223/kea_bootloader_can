@@ -2,4 +2,8 @@ Debug
 Debugger
 /Debug
 .vs
+<<<<<<< HEAD
+=======
+.settings
+>>>>>>> 3a628b219bc0a293892993b0da44665e70c0c55e
 .vscode
